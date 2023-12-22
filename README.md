@@ -86,15 +86,15 @@ Array
 
 ### Execute SQL query
 
-1.  executeSQL($sql, $params = []): This method is the primary way to execute SQL queries using the class. It takes an SQL statement and optional parameters, ensures a connection is established, prepares and executes the statement, and handles any errors. It also returns results or status based on the type of SQL command (SELECT, INSERT, UPDATE, etc.).
+- executeSQL($sql, $params = []): This method is the primary way to execute SQL queries using the class. It takes an SQL statement and optional parameters, ensures a connection is established, prepares and executes the statement, and handles any errors. It also returns results or status based on the type of SQL command (SELECT, INSERT, UPDATE, etc.).
 
 ### Query info
 
-2.  getLastInsertID(): Returns the ID of the last inserted row or the value of an auto increment column. This is useful after performing an INSERT operation.
+- getLastInsertID(): Returns the ID of the last inserted row or the value of an auto increment column. This is useful after performing an INSERT operation.
 
-3.  getRowCount(): Returns the number of rows returned for a SELECT query. This can be useful for understanding the size of the result set returned by a query.
+- getRowCount(): Returns the number of rows returned for a SELECT query. This can be useful for understanding the size of the result set returned by a query.
 
-4.  getAffectedRows(): Provides the number of rows affected by the last DELETE, INSERT, or UPDATE SQL statement.
+- getAffectedRows(): Provides the number of rows affected by the last DELETE, INSERT, or UPDATE SQL statement.
 
 ### Errors
 
@@ -102,8 +102,8 @@ Array
 
 ### Additional
 
-7.  createTable($tableName, $columns): Facilitates the creation of a new table in the database with the specified columns.
+- createTable($tableName, $columns): Facilitates the creation of a new table in the database with the specified columns.
 
-8.  resetTable($tableName, $tableColumns): Resets a table by first deleting its contents and then dropping and recreating it with the specified columns. This is useful in scenarios where a complete refresh of the table structure and data is required.
+- resetTable($tableName, $tableColumns): Resets a table by first deleting its contents and then dropping and recreating it with the specified columns. This is useful in scenarios where a complete refresh of the table structure and data is required.
 
-9.  dropTable($tableName): Deletes a table from the database. This method is handy for cleaning up or removing unnecessary tables from the database.
+- dropTable($tableName): Deletes a table from the database. This method is handy for cleaning up or removing unnecessary tables from the database.
