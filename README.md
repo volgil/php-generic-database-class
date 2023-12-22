@@ -98,9 +98,7 @@ Array
 
 ### Errors
 
-5.  getError(): Retrieves the error message of the last operation. This is crucial for debugging and error handling in database operations.
-
-6.  getCode(): Returns the error code associated with the last database operation.
+- getErrorStack(): Get all errors collected by all instances of the database class.
 
 ### Additional
 
