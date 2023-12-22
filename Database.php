@@ -129,8 +129,6 @@ class Database
             self::$totalQueryCount++;
             self::$totalQueryTime += ($endTime - $startTime);
 
-            $this->errorCode = 0;
-
             // Process result based on query type
             if (stripos($sql, 'SELECT') === 0 || stripos($sql, 'SHOW') === 0) {
                 // Handle SELECT queries
