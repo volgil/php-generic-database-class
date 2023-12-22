@@ -99,11 +99,3 @@ Array
 ### Errors
 
 - getErrorStack(): Get all errors collected by all instances of the database class.
-
-### Additional
-
-- createTable($tableName, $columns): Facilitates the creation of a new table in the database with the specified columns.
-
-- resetTable($tableName, $tableColumns): Resets a table by first deleting its contents and then dropping and recreating it with the specified columns. This is useful in scenarios where a complete refresh of the table structure and data is required.
-
-- dropTable($tableName): Deletes a table from the database. This method is handy for cleaning up or removing unnecessary tables from the database.
