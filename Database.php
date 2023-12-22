@@ -3,7 +3,7 @@
 class Database
 {
     // Encoding charset for database tables
-    private $encCharset = "utf8mb4";
+    private $encCharset = 'utf8mb4';
 
     // Properties for PDO instance and error handling
     private $pdo;
@@ -47,8 +47,9 @@ class Database
 
     private function addErrorToStack($message)
     {
-        $this->errorStack[] = "(".$this->errorPrefix. ') '. $message;
+        $this->errorStack[] = '(' . $this->errorPrefix . ') ' . $message;
     }
+
     // We collect all errors, and you do whatever you want with them,
     // preferably at the end of your script, print all errors
     // if you are on local development server
@@ -69,8 +70,7 @@ class Database
         // Check if this PDO instance already exists
         if (!isset(self::$pdoInstances[$pdoKey])) {
             try {
-
-                //we can globally have defined a constant too
+                // we can globally have defined a constant too
                 if (defined('ENC_CHARSET')) {
                     $encCharset = ENC_CHARSET;
                 } else {
@@ -78,8 +78,8 @@ class Database
                 }
 
                 // Create a new PDO instance with error mode set to exception
-                //TODO: May not be necessary to set charset on connect, or is it?...
-                //--Encoding errors can be horrifying.
+                // TODO: May not be necessary to set charset on connect, or is it?...
+                // --Encoding errors can be horrifying.
                 $pdo = new PDO("mysql:host=$this->host;dbname=$this->dbname;charset=" . $encCharset, $this->username, $this->password);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 self::$pdoInstances[$pdoKey] = $pdo;
@@ -120,7 +120,7 @@ class Database
             $stmt = $this->pdo->prepare($sql);
             if ($stmt === false) {
                 $errorInfo = $this->pdo->errorInfo();
-                $this->addErrorToStack('PDO->prepare returned false. PDO->errorInfo: [SQLSTATE] ' . $errorInfo[0] . ' [Driver-specific error code] ' . $errorInfo[1] . ' [Driver-specific error message] ' . $errorInfo[2]." [SQL query:] $sql");
+                $this->addErrorToStack('PDO->prepare returned false. PDO->errorInfo: [SQLSTATE] ' . $errorInfo[0] . ' [Driver-specific error code] ' . $errorInfo[1] . ' [Driver-specific error message] ' . $errorInfo[2] . " [SQL query:] $sql");
             }
             $stmt->execute($params);
             $endTime = microtime(true);
@@ -143,8 +143,7 @@ class Database
                 return true;
             }
         } catch (PDOException $e) {
-          
-            $this->addErrorToStack('Database->executeSQL() exception: [Error code:]' . $e->getCode() . ' [Error message:] ' . $e->getMessage())." [SQL query:] $sql";
+            $this->addErrorToStack('Database->executeSQL() exception: [Error code:]' . $e->getCode() . ' [Error message:] ' . $e->getMessage()) . " [SQL query:] $sql";
 
             return false;
         }
@@ -175,28 +174,26 @@ class Database
         return self::$totalQueryTime;
     }
 
-    //Skip these stinky functions.
-    //Random code using the database should not extract error info and throw around
-    //Our database functions returns false on failure, and the caller should
-    //create a central place for logging or printing errors by requesting the error stack.
-    //Furthermore, any failure should be handled by this database module, and if it really
-    //can not fix it, then store the appropriate error message and return false.
-    //if needed, we can defined our own error codes to send to the caller,
-    //but we won't straight out dump the sensetive error data to the caller,
-    //as if would be supposed to deal with the details there and then. Again, we deal with it
-    //internally, and then we provide the error-stack to a later caller (getErrorStack()).
+    // Skip these stinky functions.
+    // Random code using the database should not extract error info and throw around
+    // Our database functions returns false on failure, and the caller should
+    // create a central place for logging or printing errors by requesting the error stack.
+    // Furthermore, any failure should be handled by this database module, and if it really
+    // can not fix it, then store the appropriate error message and return false.
+    // if needed, we can defined our own error codes to send to the caller,
+    // but we won't straight out dump the sensetive error data to the caller,
+    // as if would be supposed to deal with the details there and then. Again, we deal with it
+    // internally, and then we provide the error-stack to a later caller (getErrorStack()).
 
     public function getError()
     {
-        echo "DEPRECATED: Database->getError()";
+        echo 'DEPRECATED: Database->getError()';
         exit;
     }
 
     public function getCode()
     {
-        echo "DEPRECATED: Database->getCode()";
+        echo 'DEPRECATED: Database->getCode()';
         exit;
     }
-
-
 }
