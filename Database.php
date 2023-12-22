@@ -2,13 +2,13 @@
 
 class Database
 {
+    // Encoding charset for database tables
+    private $encCharset = "utf8mb4";
+
     // Properties for PDO instance and error handling
     private $pdo;
 
-    private $errorMessage;
-
-    private $errorCode;
-
+    // Query result info
     private $rowCount;
 
     private $affectedRows;
@@ -29,6 +29,13 @@ class Database
 
     private static $pdoInstances = [];  // Array to store the PDO instances
 
+    // To store error messages
+    private $errorPrefix = '';
+
+    // Static! Because we may have several instances recording their own errors.
+    // We need one shared error stack.
+    private static $errorStack = [];
+
     // Constructor to initialize connection parameters
     public function __construct($host, $dbname, $username, $password)
     {
@@ -38,23 +45,48 @@ class Database
         $this->password = $password;
     }
 
+    private function addErrorToStack($message)
+    {
+        $this->errorStack[] = "(".$this->errorPrefix. ') '. $message;
+    }
+    // We collect all errors, and you do whatever you want with them,
+    // preferably at the end of your script, print all errors
+    // if you are on local development server
+    public function getErrorStack()
+    {
+        return $this->errorStack;
+    }
+
     // Method to establish a PDO connection
     private function connect()
     {
         // Create a unique key for this connection
         $pdoKey = md5($this->host . $this->dbname . $this->username . $this->password);
 
+        // To prefix the error so we know in what context it occured
+        $this->errorPrefix = "DB Error ($this->host:$this->dbname:$this->username)";
+
         // Check if this PDO instance already exists
         if (!isset(self::$pdoInstances[$pdoKey])) {
             try {
+
+                //we can globally have defined a constant too
+                if (defined('ENC_CHARSET')) {
+                    $encCharset = ENC_CHARSET;
+                } else {
+                    $encCharset = $this->encCharset;
+                }
+
                 // Create a new PDO instance with error mode set to exception
-                $pdo = new PDO("mysql:host=$this->host;dbname=$this->dbname;charset=" . ENC_CHARSET, $this->username, $this->password);
+                //TODO: May not be necessary to set charset on connect, or is it?...
+                //--Encoding errors can be horrifying.
+                $pdo = new PDO("mysql:host=$this->host;dbname=$this->dbname;charset=" . $encCharset, $this->username, $this->password);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 self::$pdoInstances[$pdoKey] = $pdo;
             } catch (PDOException $e) {
                 // Handle PDO connection error
-                $this->errorMessage = $e->getMessage();
-                $this->errorCode = $e->getCode();
+                $this->addErrorToStack('Database->connect() exception: [Error code:]' . $e->getCode() . ' [Error message:] ' . $e->getMessage());
+
                 return false;
             }
         }
@@ -87,16 +119,8 @@ class Database
             $startTime = microtime(true);
             $stmt = $this->pdo->prepare($sql);
             if ($stmt === false) {
-                // Handle errors differently based on the environment
-                if (isLocalhostOrLocalIP()) {
-                    $errorInfo = $this->pdo->errorInfo();
-                    echo 'Error shown only at localhost: ' . $errorInfo[2] . " (SQL: $sql)";
-                    exit;
-                } else {
-                    $errorInfo = $this->pdo->errorInfo();
-                    echo 'Error: 49854';  // Generic error message for production
-                    exit;
-                }
+                $errorInfo = $this->pdo->errorInfo();
+                $this->addErrorToStack('PDO->prepare returned false. PDO->errorInfo: [SQLSTATE] ' . $errorInfo[0] . ' [Driver-specific error code] ' . $errorInfo[1] . ' [Driver-specific error message] ' . $errorInfo[2]." [SQL query:] $sql");
             }
             $stmt->execute($params);
             $endTime = microtime(true);
@@ -119,12 +143,8 @@ class Database
                 return true;
             }
         } catch (PDOException $e) {
-            // Handle PDO execution errors
-            $this->errorMessage = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            if (isLocalhostOrLocalIP()) {
-                echo 'ERROR shown only at localhost: ' . $this->getError() . " (SQL: $sql)" . '<br>';
-            }
+          
+            $this->addErrorToStack('Database->executeSQL() exception: [Error code:]' . $e->getCode() . ' [Error message:] ' . $e->getMessage())." [SQL query:] $sql";
 
             return false;
         }
@@ -145,80 +165,6 @@ class Database
         return $this->affectedRows;
     }
 
-    public function getError()
-    {
-        return $this->errorMessage;
-    }
-
-    public function getCode()
-    {
-        return $this->errorCode;
-    }
-
-    public function createTable($tableName, $columns)
-    {
-        $this->ensureConnection();
-        try {
-            $sql = "CREATE TABLE $tableName (";
-            foreach ($columns as $column) {
-                $sql .= "$column, ";
-            }
-            $sql = rtrim($sql, ', ');
-
-            if (defined('CLASS_DATABASE_USE_SQLITE3'))
-                $sql .= ')';
-            else
-                $sql .= ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci';
-
-            return $this->executeSQL($sql);
-        } catch (PDOException $e) {
-            $this->errorMessage = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return false;
-        }
-    }
-
-    public function resetTable($tableName, $tableColumns)
-    {
-        $this->ensureConnection();
-        try {
-            // for some reason I must delete first, if it contains a lot of data.
-            // If you try to drop a table that has data in it without deleting the data first, you may encounter errors such as foreign key constraint violations or duplicate key errors. This is because the data in the table may reference other tables or have unique constraints that are no longer valid after the table has been dropped.
-            $sql = "DELETE FROM $tableName";
-            $this->executeSQL($sql);
-
-            $sql = "DROP TABLE IF EXISTS $tableName";
-            $this->executeSQL($sql);
-
-            $this->createTable($tableName, $tableColumns);
-            return true;
-        } catch (PDOException $e) {
-            $this->errorMessage = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return false;
-        }
-    }
-
-    public function dropTable($tableName)
-    {
-        $this->ensureConnection();
-        try {
-            // for some reason I must delete first, if it contains a lot of data.
-            // If you try to drop a table that has data in it without deleting the data first, you may encounter errors such as foreign key constraint violations or duplicate key errors. This is because the data in the table may reference other tables or have unique constraints that are no longer valid after the table has been dropped.
-            $sql = "DELETE FROM $tableName";
-            $this->executeSQL($sql);
-
-            $sql = "DROP TABLE IF EXISTS $tableName";
-            $this->executeSQL($sql);
-
-            return true;
-        } catch (PDOException $e) {
-            $this->errorMessage = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return false;
-        }
-    }
-
     public static function getTotalQueryCount()
     {
         return self::$totalQueryCount;
@@ -228,4 +174,29 @@ class Database
     {
         return self::$totalQueryTime;
     }
+
+    //Skip these stinky functions.
+    //Random code using the database should not extract error info and throw around
+    //Our database functions returns false on failure, and the caller should
+    //create a central place for logging or printing errors by requesting the error stack.
+    //Furthermore, any failure should be handled by this database module, and if it really
+    //can not fix it, then store the appropriate error message and return false.
+    //if needed, we can defined our own error codes to send to the caller,
+    //but we won't straight out dump the sensetive error data to the caller,
+    //as if would be supposed to deal with the details there and then. Again, we deal with it
+    //internally, and then we provide the error-stack to a later caller (getErrorStack()).
+
+    public function getError()
+    {
+        echo "DEPRECATED: Database->getError()";
+        exit;
+    }
+
+    public function getCode()
+    {
+        echo "DEPRECATED: Database->getCode()";
+        exit;
+    }
+
+
 }
