@@ -6,6 +6,7 @@ Uses prepared statements.
 
 ## Repo purpose
 
+test3
 This repo is created to encourage myself to better modularize the generic components I write for personal projects.
 
 ## Repo goal
