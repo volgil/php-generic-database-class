@@ -16,6 +16,8 @@ Create a database module easy to incorporate in small PHP projects.
 
 Version 0.1.0.
 
+_Not fully documented_
+
 ## Install
 
 Include Database.php in any of the ways possible in PHP, suggestingly:
